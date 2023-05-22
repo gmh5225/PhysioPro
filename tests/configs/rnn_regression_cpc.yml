@@ -1,0 +1,11 @@
+_base_: rnn_regression.yml
+pretrain_model:
+  type: CPC
+  optimizer: Adam
+  lr: 0.001
+  forecast_step: 10
+  weight_decay: 0.0
+  max_epoches: 2
+  early_stop: 2
+  batch_size: 256
+

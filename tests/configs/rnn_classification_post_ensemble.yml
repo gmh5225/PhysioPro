@@ -1,0 +1,39 @@
+data:
+  type: ts
+  prefix: data_sample/Multivariate_ts
+  name: Heartbeat
+  task: classification
+datasetwrapper:
+  type: modelpool
+  # the trained model predictions need to be placed in model_pool_dir
+  # predictions for each model are placed in a separate folder in model_pool_dir and named with {model_name}
+  # three prediction files for train, valid and test splits are placed under {model_pool_dir}/{model_name}/ and named {split}_pre.pkl
+  model_pool_dir: data_sample/model_pool
+  model_list: [model_1, model_2, model_3]
+  loss_fn: cross_entropy
+network:
+  type: TSRNN
+  cell_type: GRU
+  emb_dim: 1
+  emb_type: static
+  hidden_size: 64
+  dropout: 0.
+dispatcher:
+  type: moe
+  hidden_size: 64
+ensemble:
+  type: post_ensemble
+  ensemble_type: moe
+  optimizer: Adam
+  lr: 0.001
+  weight_decay: 0.0
+  loss_fn: cross_entropy
+  metrics: [accuracy]
+  observe: accuracy
+  lower_is_better: False
+  max_epoches: 9
+  early_stop: 2
+  batch_size: 256
+runtime:
+  seed: 42
+  use_cuda: true
