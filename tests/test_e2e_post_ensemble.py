@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 from pathlib import Path
 from shutil import rmtree
 import forecaster.entry.train_post_ensemble as train

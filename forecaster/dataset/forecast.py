@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 from torch.utils.data import Dataset
 from typing import Optional
 

@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 """
 The dataloader for loading .ts data.
 Refer to the code in https://github.com/gzerveas/mvts_transformer.

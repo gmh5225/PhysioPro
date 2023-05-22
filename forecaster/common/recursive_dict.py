@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 import collections.abc
 from typing import Iterable, Tuple, overload, Mapping, Any, Union, Optional
 

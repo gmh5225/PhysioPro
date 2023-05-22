@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 """
 Some utilities for InceptionTime from https://github.com/TheMrGhostman/InceptionTime-Pytorch.
 """

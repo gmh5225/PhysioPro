@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 from typing import cast, Union, List, Optional
 from pathlib import Path
 
