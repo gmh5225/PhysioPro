@@ -1,8 +1,13 @@
-# Introduction 
 A general deep learning framework for prediction tasks.
 
-# Installation
-`python setup.py install`
+## Installation
 
-## Enable develop mode in local machine:
-`python setup.py develop`
+To install from source code:
+```bash
+pip install .
+```
+
+To install in development mode:
+```bash
+pip install --editable .
+```
