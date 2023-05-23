@@ -56,7 +56,7 @@ def setup():
         description="A toolkit for time-series forecasting tasks",
         long_description=read("README.md"),
         long_description_content_type="text/markdown",
-        url="https://dev.azure.com/MSForecast/_git/Forecaster",
+        url="https://github.com/microsoft/forecaster",
         packages=setuptools.find_packages(),
         classifiers=[
             "Programming Language :: Python :: 3",
