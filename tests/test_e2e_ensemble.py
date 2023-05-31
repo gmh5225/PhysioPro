@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 from pathlib import Path
 from shutil import rmtree
-import forecaster.entry.train_ensemble as train
+import physiopro.entry.train_ensemble as train
 
 output_dir = Path("./outputs")
 

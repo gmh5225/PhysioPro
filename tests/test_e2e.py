@@ -3,7 +3,7 @@
 from pathlib import Path
 from shutil import rmtree
 
-from forecaster.entry import train, pretrain_finetune
+from physiopro.entry import train, pretrain_finetune
 
 output_dir = Path("./outputs")
 

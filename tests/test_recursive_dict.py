@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
-from forecaster.common.recursive_dict import RecursiveDict
+from physiopro.common.recursive_dict import RecursiveDict
 
 
 def test_recursive_dict():

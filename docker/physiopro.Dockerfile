@@ -40,7 +40,7 @@ RUN wget -q -O azcopy.tar.gz https://aka.ms/downloadazcopy-v10-linux && \
     rm -r azcopy.tar.gz azcopy_* && \
     chmod +x /usr/local/bin/azcopy
 
-COPY dist/forecaster-*.whl .
+COPY dist/physiopro-*.whl .
 RUN pip install *.whl && rm *.whl
 
 WORKDIR /workspace

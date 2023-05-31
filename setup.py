@@ -6,7 +6,7 @@ from datetime import datetime
 from distutils.cmd import Command
 from pathlib import Path
 
-init_file_path = "forecaster/__init__.py"
+init_file_path = "physiopro/__init__.py"
 
 
 def read(rel_path):
@@ -49,14 +49,14 @@ class BumpDevVersion(Command):
 
 def setup():
     setuptools.setup(
-        name="forecaster",
+        name="physiopro",
         version=get_version(init_file_path),
-        author="Forecaster team",
-        author_email="forecaster@microsoft.com",
+        author="PhysioPro team",
+        author_email="physiopro@microsoft.com",
         description="A toolkit for time-series forecasting tasks",
         long_description=read("README.md"),
         long_description_content_type="text/markdown",
-        url="https://github.com/microsoft/forecaster",
+        url="https://github.com/microsoft/physiopro",
         packages=setuptools.find_packages(),
         classifiers=[
             "Programming Language :: Python :: 3",
@@ -65,7 +65,7 @@ def setup():
         ],
         python_requires=">=3.8",
         install_requires=[
-            "torch==1.13.1",
+            "torch==1.8.1",
             "protobuf==3.19.5",
             "utilsd>=0.0.15",
             "click>=8.0",
