@@ -10,3 +10,4 @@ disable =
     broad-except,
     too-many-locals,
     too-many-arguments,
+    no-member,

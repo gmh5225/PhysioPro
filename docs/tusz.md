@@ -1,9 +1,10 @@
 
-This document describes how to preprocess the TUH EEG Seizure Corpus (TUSZ) dataset. The data can be downloaded from 
-[Temple University Hospital EEG Seizure Corpus (TUSZ)  v2.0.0](https://isip.piconepress.com/projects/tuh_eeg/index.shtml) 
+This document describes how to process the TUH EEG Seizure Corpus (TUSZ) dataset.
+The data can be downloaded from [Temple University Hospital EEG Seizure Corpus (TUSZ)  v2.0.0](https://isip.piconepress.com/projects/tuh_eeg/index.shtml) 
 
 ## Scripts
 
+1. Data Preprocessing
 For the parameter `file-markers-dir`: clone the file markers from `https://github.com/tsy935/eeg-gnn-ssl/tree/main/data/file_markers_ssl` and set it as `<download_path>/eeg-gnn-ssl/data/file_markers_detection`.
 This is for train/test splitting, no longer needed for TUSZ v2.0.0.
 
@@ -22,3 +23,13 @@ python scripts/tusz.py \
 
 # v2.0.0 not supported yet
 ```
+
+2. Run TUSZ with Transformer
+```bash
+# create the output directory
+mkdir -p outputs/tusz_v1.5.2
+# run the train task
+python -m physiopro.entry.train docs/configs/transformer_tusz_v1.5.2.yml
+```
+
+The results will be saved to `outputs/tusz_v1.5.2` directory.

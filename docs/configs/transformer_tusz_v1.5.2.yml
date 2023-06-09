@@ -1,0 +1,31 @@
+data:
+  type: tusz
+  data_folder: data/tusz_processed_v1.5.2/unipolar/
+  meta_path: data/tusz_processed_v1.5.2/unipolar/meta.pkl
+  num_variables: 19
+  freq: 200
+  time: 60
+network:
+  type: TSTransformer
+  emb_dim: 32
+  emb_type: learn
+  hidden_size: 32
+  dropout: 0.1
+model:
+  type: ts
+  task: classification
+  optimizer: Adam
+  lr: 0.001
+  weight_decay: 0.0
+  loss_fn: bce
+  metrics: [auc, auprc, ap]
+  observe: auprc
+  lower_is_better: False
+  max_epoches: 100
+  early_stop: 1
+  batch_size: 32
+  aggregate: True
+runtime:
+  seed: 42
+  use_cuda: true
+  output_dir: outputs/tusz_v1.5.2
