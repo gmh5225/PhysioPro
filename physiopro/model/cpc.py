@@ -27,7 +27,7 @@ class CPC(BaseModel):
         optimizer: str,
         lr: float,
         weight_decay: float,
-        max_epoches: int,
+        max_epochs: int,
         batch_size: int,
         forecast_step: int = 10,
         network: Optional[nn.Module] = None,
@@ -51,7 +51,7 @@ class CPC(BaseModel):
             observe,
             lr,
             lower_is_better,
-            max_epoches,
+            max_epochs,
             batch_size,
             early_stop,
             optimizer,
@@ -68,7 +68,7 @@ class CPC(BaseModel):
         lr: float,
         weight_decay: float,
         lower_is_better: bool,
-        max_epoches: int,
+        max_epochs: int,
         batch_size: int,
         early_stop: Optional[int] = None,
         **kwargs,
@@ -80,8 +80,8 @@ class CPC(BaseModel):
         if early_stop is not None:
             self.early_stop = EarlyStop(patience=early_stop, mode="min" if lower_is_better else "max")
         else:
-            self.early_stop = EarlyStop(patience=max_epoches)
-        self.max_epoches = max_epoches
+            self.early_stop = EarlyStop(patience=max_epochs)
+        self.max_epochs = max_epochs
         self.batch_size = batch_size
         self.lr = lr
         self.weight_decay = weight_decay
@@ -139,8 +139,8 @@ class CPC(BaseModel):
         self.best_network_params = copy.deepcopy(self.network.state_dict())
         start_epoch, best_res = self._resume()
 
-        for epoch in range(start_epoch, self.max_epoches):
-            # if self.early_stop_epoches is not None and stop_epoches >= self.early_stop_epoches:
+        for epoch in range(start_epoch, self.max_epochs):
+            # if self.early_stop_epochs is not None and stop_epochs >= self.early_stop_epochs:
             #     print("earlystop")
             #     break
             # training

@@ -35,7 +35,7 @@ class BaseModel(nn.Module):
         observe: str,
         lr: float = 1e-3,
         lower_is_better: bool = True,
-        max_epoches: int = 50,
+        max_epochs: int = 50,
         batch_size: int = 512,
         early_stop: Optional[int] = None,
         optimizer: str = "Adam",
@@ -57,7 +57,7 @@ class BaseModel(nn.Module):
             metrics=metrics,
             observe=observe,
             lower_is_better=lower_is_better,
-            max_epoches=max_epoches,
+            max_epochs=max_epochs,
             batch_size=batch_size,
             early_stop=early_stop,
         )
@@ -83,7 +83,7 @@ class BaseModel(nn.Module):
         metrics: List[str],
         observe: str,
         lower_is_better: bool,
-        max_epoches: int,
+        max_epochs: int,
         batch_size: int,
         early_stop: Optional[int] = None,
     ) -> None:
@@ -99,8 +99,8 @@ class BaseModel(nn.Module):
         if early_stop is not None:
             self.early_stop = EarlyStop(patience=early_stop, mode="min" if lower_is_better else "max")
         else:
-            self.early_stop = EarlyStop(patience=max_epoches, mode="min" if lower_is_better else "max")
-        self.max_epoches = max_epoches
+            self.early_stop = EarlyStop(patience=max_epochs, mode="min" if lower_is_better else "max")
+        self.max_epochs = max_epochs
         self.batch_size = batch_size
         self.observe = observe
         self.lr = lr
@@ -174,7 +174,7 @@ class BaseModel(nn.Module):
         start_epoch, best_res = self._resume()
         best_epoch = best_res.pop("best_epoch", 0)
         best_score = self.early_stop.best
-        for epoch in range(start_epoch, self.max_epoches):
+        for epoch in range(start_epoch, self.max_epochs):
             self.train()
             train_loss = AverageMeter()
             train_global_tracker = GlobalTracker(self.metrics, self.metric_fn)

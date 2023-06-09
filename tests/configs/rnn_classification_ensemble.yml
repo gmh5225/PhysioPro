@@ -20,7 +20,7 @@ model:
   metrics: [accuracy]
   observe: accuracy
   lower_is_better: False
-  max_epoches: 9
+  max_epochs: 9
   early_stop: 2
   batch_size: 256
   aggregate: True

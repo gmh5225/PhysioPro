@@ -21,7 +21,7 @@ class TS(BaseModel):
         metrics: List[str],
         observe: str,
         lower_is_better: bool,
-        max_epoches: int,
+        max_epochs: int,
         batch_size: int,
         network: Optional[nn.Module] = None,
         output_dir: Optional[Path] = None,
@@ -44,7 +44,7 @@ class TS(BaseModel):
             metrics: metrics to evaluate model.
             observe: metric for model selection (earlystop).
             lower_is_better: whether a lower observed metric means better result.
-            max_epoches: maximum epoch to learn.
+            max_epochs: maximum epoch to learn.
             batch_size: batch size.
             early_stop: earlystop rounds.
             out_ranges: a list of final ranges to take as final output. Should have form [(start, end), (start, end, step), ...]
@@ -64,7 +64,7 @@ class TS(BaseModel):
             observe,
             lr,
             lower_is_better,
-            max_epoches,
+            max_epochs,
             batch_size,
             early_stop,
             optimizer,

@@ -20,7 +20,7 @@ model:
   metrics: [r2, mse, corr, rrse]
   observe: r2
   lower_is_better: False
-  max_epoches: 1
+  max_epochs: 1
   early_stop: 2
   batch_size: 256
   aggregate: True

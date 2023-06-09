@@ -28,10 +28,10 @@ def _init_scheduler(self, loader_length):
     https://github.com/TorchEnsemble-Community/Ensemble-Pytorch/blob/master/torchensemble/snapshot_ensemble.py.
     """
 
-    if self.max_epoches * loader_length < self.n_estimators:
+    if self.max_epochs * loader_length < self.n_estimators:
         raise ValueError("The number of snapshots cannot be greater than the total number of iterations of the training data set.")
-    self.n_iters_per_estimator = self.max_epoches * loader_length // self.n_estimators
-    n_iters = self.max_epoches * loader_length
+    self.n_iters_per_estimator = self.max_epochs * loader_length // self.n_estimators
+    n_iters = self.max_epochs * loader_length
     T_M = math.ceil(n_iters / self.n_estimators)
     self.scheduler = LambdaLR(self.optimizer, lr_lambda=lambda iteration: 0.5 * (
         torch.cos(torch.tensor(math.pi * (iteration % T_M) / T_M)) + 1

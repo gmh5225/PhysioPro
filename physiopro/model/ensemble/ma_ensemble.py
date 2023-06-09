@@ -17,7 +17,7 @@ from ..base import MODELS, BaseModel
 
 def _init_scheduler(self, loader_length):
     self.scheduler = None
-    total_iter = self.max_epoches * loader_length
+    total_iter = self.max_epochs * loader_length
     if self.sma_start_iter >= total_iter:
         raise ValueError("The hyperparameter \'sma_start_iter\' is greater than the total number of iterations of the training data set, so the ensemble is equal to a single base model.")
 

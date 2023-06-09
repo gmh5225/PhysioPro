@@ -21,7 +21,7 @@ model:
   metrics: [auc, auprc, ap]
   observe: auprc
   lower_is_better: False
-  max_epoches: 100
+  max_epochs: 100
   early_stop: 1
   batch_size: 32
   aggregate: True

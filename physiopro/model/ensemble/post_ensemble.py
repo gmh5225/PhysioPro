@@ -50,7 +50,7 @@ class PostEnsemble(BaseModel):
         observe: str,
         lr: float = 1e-3,
         lower_is_better: bool = True,
-        max_epoches: int = 50,
+        max_epochs: int = 50,
         batch_size: int = 512,
         early_stop: int = 10,
         optimizer: str = "Adam",
@@ -92,7 +92,7 @@ class PostEnsemble(BaseModel):
             metrics=metrics,
             observe=observe,
             lower_is_better=lower_is_better,
-            max_epoches=max_epoches,
+            max_epochs=max_epochs,
             batch_size=batch_size,
             early_stop=early_stop,
         )
