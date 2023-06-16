@@ -14,50 +14,51 @@ from scipy.fftpack import fft
 from montage import INCLUDED_CHANNELS, bipolar
 
 
-def get_tse_edf_file_names(raw_data_dir, resampled_data_dir):
+def get_edf_file_names(resampled_data_dir):
     """
-    Get .tse and .edf file names
+    Get .edf file names
+
+    Returns:
+    --------
+    dict
+        edf file names and corresponding paths
+        file names are in format {official patient number}_{session number}_{segment number}, e.g., 00000258_s002_t000
     """
-    tse_files = {}
-    for path, _, files in os.walk(raw_data_dir):
-        for name in files:
-            if ".tse_bi" in name:
-                assert name not in tse_files, "Duplicate tse_file"
-                tse_files[name] = os.path.join(path, name)
     edf_files = {}
-    for path, _, files in os.walk(resampled_data_dir):
+    for root, _, files in os.walk(resampled_data_dir):
         for name in files:
             if '.h5' in name:
-                assert name not in edf_files, "Duplicate edf_file"
-                edf_files[name] = os.path.join(path, name)
-    return tse_files, edf_files
+                # some patients have sessions listed under multiple montage folders, only the last one will be saved
+                edf_files[name] = os.path.join(root, name)
+
+    return edf_files
 
 
-def extract_time(file_name):
+def get_label_file_names(version, raw_data_dir):
     """
-    Extract seizure time from .tse file
+    Get label file names
 
-    The aggrement protocol defined for label annotation aggregation
+    Returns:
+    --------
+    dict
+        label file names and corresponding paths
     """
-    seizure_times = []
-    with open(file_name) as f:
-        for line in f.readlines():
-            if "seiz" in line:  # if seizure
-                # seizure start and end time
-                seizure_times.append(
-                    [
-                        float(line.strip().split(" ")[0]),
-                        float(line.strip().split(" ")[1]),
-                    ]
-                )
-    return seizure_times
+    # postfix of label files
+    postfix = 'tse_bi' if version == '1.5.2' else 'csv_bi'
+    label_files = {}
+    for root, _, files in os.walk(raw_data_dir):
+        for name in files:
+            if postfix in name:
+                # some patients have sessions listed under multiple montage folders, only the last one will be saved
+                label_files[name] = os.path.join(root, name)
+
+    return label_files
 
 
 def get_ordered_channels(file_name, verbose, labels_object, channel_names):
     """
     Some person may missing necessary channels, these persons will be excluded
-
-    # refer to https://github.com/tsy935/eeg-gnn-ssl/blob/main/data/data_utils.py
+    refer to https://github.com/tsy935/eeg-gnn-ssl/blob/main/data/data_utils.py
     """
     labels = list(labels_object)
     for i, label in enumerate(labels):
@@ -74,24 +75,26 @@ def get_ordered_channels(file_name, verbose, labels_object, channel_names):
     return ordered_channels
 
 
-def get_edf_signals(edf):
+def get_edf_signals(edf, ordered_channels):
     """
     Get EEG signal in edf file
 
-    Args:
-    -----
-        edf: edf object
+    Parameters:
+    -----------
+    edf:
+        edf object
+    ordered_channels: list
+        list of channel indexes
 
     Returns:
     --------
-        signals: shape (num_channels, num_data_points)
+    numpy.ndarray
+        shape (num_channels, num_data_points)
     """
-    n = edf.signals_in_file
-    samples = edf.getNSamples()[0]
-    signals = np.zeros((n, samples))
-    for i in range(n):
+    signals = np.zeros((len(ordered_channels), edf.getNSamples()[0]))
+    for i, index in enumerate(ordered_channels):
         try:
-            signals[i, :] = edf.readSignal(i)
+            signals[i, :] = edf.readSignal(index)
         except:
             raise Exception("Get edf signals failed")
     return signals
@@ -102,15 +105,19 @@ def resample_data(signals, to_freq=200, window_size=4):
     Resample signals from its original sampling freq to another freqency
     refer to https://github.com/tsy935/eeg-gnn-ssl/blob/main/data/resample_signals.py
 
-    Args:
-    -----
-        signals: EEG signal slice, (num_channels, num_data_points)
-        to_freq: Re-sampled frequency in Hz
-        window_size: time window in seconds
+    Parameters:
+    -----------
+    signals: numpy.ndarray
+        EEG signal slice, (num_channels, num_data_points)
+    to_freq: int
+        Re-sampled frequency in Hz
+    window_size: int
+        time window in seconds
 
     Returns:
     --------
-        resampled: (num_channels, resampled_data_points)
+    numpy.ndarray
+        shape (num_channels, resampled_data_points)
     """
     num = int(to_freq * window_size)
     resampled = resample(signals, num=num, axis=1)
@@ -121,21 +128,26 @@ def resample_data(signals, to_freq=200, window_size=4):
 def resample_all(raw_edf_dir, to_freq, save_dir):
     """
     Resample all edf files in raw_edf_dir to to_freq and save to save_dir
+
+    Returns:
+    --------
+    dict
+        edf file names and corresponding paths after resampling
     """
-    edf_files = []
-    saved_files = []
-    for path, _, files in os.walk(raw_edf_dir):
+    raw_edfs = []
+    for root, _, files in os.walk(raw_edf_dir):
         for file in files:
             if ".edf" in file:
-                edf_files.append(os.path.join(path, file))
+                raw_edfs.append(os.path.join(root, file))
+    print(f"Number of raw edf files: {len(raw_edfs)}")
 
+    resampled_edfs = {}
     failed_files = []
-    for idx in tqdm(range(len(edf_files))):
-        edf_fn = edf_files[idx]
-
-        save_fn = os.path.join(save_dir, edf_fn.split("/")[-1].split(".edf")[0] + ".h5")
-        if os.path.exists(save_fn):
-            saved_files.append(save_fn)
+    for _, edf_fn in enumerate(tqdm(raw_edfs)):
+        new_file_name = f"{edf_fn.split('/')[-1].split('.edf')[0]}.h5"
+        resampled_edf = os.path.join(save_dir, new_file_name)
+        if os.path.exists(resampled_edf):
+            resampled_edfs[new_file_name] = resampled_edf
             continue
         try:
             f = pyedflib.EdfReader(edf_fn)
@@ -143,8 +155,7 @@ def resample_all(raw_edf_dir, to_freq, save_dir):
             ordered_channels = get_ordered_channels(
                 edf_fn, False, f.getSignalLabels(), INCLUDED_CHANNELS
             )
-            signals = get_edf_signals(f)
-            signal_array = np.array(signals[ordered_channels, :])
+            signal_array = get_edf_signals(f, ordered_channels)
             sample_freq = f.getSampleFrequency(0)
             if sample_freq != to_freq:
                 signal_array = resample_data(
@@ -153,9 +164,9 @@ def resample_all(raw_edf_dir, to_freq, save_dir):
                     window_size=int(signal_array.shape[1] / sample_freq),
                 )
 
-            with h5py.File(save_fn, "w") as hf:
+            with h5py.File(resampled_edf, "w") as hf:
                 hf.create_dataset("resampled_signal", data=signal_array)
-            saved_files.append(save_fn)
+            resampled_edfs[new_file_name] = resampled_edf
 
         except Exception:
             # pepole may missing some channels
@@ -163,12 +174,19 @@ def resample_all(raw_edf_dir, to_freq, save_dir):
 
     print("DONE. {} files failed.".format(len(failed_files)))
 
-    return saved_files
+    return resampled_edfs
 
 
-def get_train_test_ids(file_markers_dir, train_meta, test_meta):
+def get_train_test_ids_v1(file_markers_dir, train_meta, test_meta):
     """
-    Get train and test ids from file markers
+    Get train and test ids from file markers in v1.5.2
+
+    Returns:
+    --------
+    list
+        official patient numbers of train set
+    list
+        official patient numbers of test set
     """
     def __get_ids(meta):
         ids = set()
@@ -176,29 +194,76 @@ def get_train_test_ids(file_markers_dir, train_meta, test_meta):
             ids.add(line.split('.')[0].split('_')[0])
         return ids
 
-    train_ids = [__get_ids(os.path.join(file_markers_dir, _)) for _ in train_meta]
-    test_ids = [__get_ids(os.path.join(file_markers_dir, _)) for _ in test_meta]
-    train_ids = train_ids[0] | train_ids[1]
-    test_ids = test_ids[0] | test_ids[1]
+    train_ids, test_ids = set(), set()
+    for meta in train_meta:
+        train_ids.update(__get_ids(os.path.join(file_markers_dir, meta)))
+    for meta in test_meta:
+        test_ids.update(__get_ids(os.path.join(file_markers_dir, meta)))
+
+    return list(train_ids), list(test_ids)
+
+
+def get_train_test_ids_v2(raw_data_dir):
+    """
+    Get train and test ids in v2.0.0
+
+    Returns:
+    --------
+    list
+        official patient numbers of train set
+    list
+        official patient numbers of test set
+    """
+    train_ids = os.listdir(os.path.join(raw_data_dir, 'edf', 'train'))
+    test_ids = os.listdir(os.path.join(raw_data_dir, 'edf', 'eval'))
 
     return train_ids, test_ids
 
 
-def __get_feature_label_dataframe(f, edf_files, tse_files, frequency, duration, montage_type):
+def extract_seizure_time(version, file_name):
+    """
+    Extract seizure time from annnotation file
+
+    Returns:
+    --------
+    list
+        seizure time, each element is a list of start and end time
+    """
+    seizure_times = []
+    with open(file_name) as f:
+        for line in f.readlines():
+            if "seiz" in line:  # if seizure
+                # seizure start and end time
+                if version == '1.5.2':
+                    seizure_times.append([
+                        float(line.strip().split(" ")[0]),
+                        float(line.strip().split(" ")[1]),
+                    ])
+                else:
+                    seizure_times.append([
+                        float(line.strip().split(",")[1]),
+                        float(line.strip().split(",")[2]),
+                    ])
+    return seizure_times
+
+
+def __get_feature_label_dataframe(version, edf_file, edf_files, label_files, frequency, duration, montage_type):
     """
     Get features and labels in dataframe format
 
     Returns:
     --------
-    nedf: pandas dataframe, each row is a sample, each column is a channel
-    label: pandas dataframe, each row is a sample, each column is a label
+    pandas dataframe
+        feature, each row is a sample, each column is a channel
+    pandas dataframe
+        label, each row is a sample, each column is a label
     """
-    edf = np.array(h5py.File(edf_files[f], 'r')['resampled_signal'][()]).T
-
-    assert len(edf) % frequency == 0, f"{f} EDF file cannot be reshape to 200 shape."
+    edf = np.array(h5py.File(edf_files[edf_file], 'r')['resampled_signal'][()]).T
+    assert len(edf) % frequency == 0, f"{edf_file} EDF file shape error."
     num_samples = len(edf) // frequency  # in seconds
 
-    time = extract_time(tse_files[f.split('.')[0] + '.tse_bi'])
+    postfix = '.tse_bi' if version == '1.5.2' else '.csv_bi'
+    time = extract_seizure_time(version, label_files[edf_file.split('.')[0] + postfix])
 
     # generate labels in dataframe format
     labels = np.zeros((num_samples, 1))
@@ -234,7 +299,7 @@ def __get_feature_label_dataframe(f, edf_files, tse_files, frequency, duration, 
             bp_value = edf[:, channels_map[bp]]
             features.insert(len(features.columns), bp, bp_value)
 
-    features.insert(0, 'id', f)
+    features.insert(0, 'id', edf_file)
     features.set_index('id', inplace=True)
 
     # truncate the additional seconds
@@ -244,18 +309,20 @@ def __get_feature_label_dataframe(f, edf_files, tse_files, frequency, duration, 
     return features, labels
 
 
-def get_features_and_labels(edf_files, tse_files, frequency, duration, montage_type, \
-                             train_ids, test_ids, feature_dir, label_dir):
+def get_features_and_labels(version, edf_files, label_files, frequency, duration, montage_type,
+                            train_ids, test_ids, feature_dir, label_dir):
     """
     Get features and labels in dataframe format
 
     Returns:
     --------
-    nedfs: dict, key is edf file name, value is pandas dataframe, each row is a sample, each column is a channel
-    labels: dict, key is edf file name, value is pandas dataframe, each row is a sample, each column is a label
+    dict
+        features, key is edf file name, value is pandas dataframe, each row is a sample, each column is a channel
+    dict
+        labels, key is edf file name, value is pandas dataframe, each row is a sample, each column is a label
     """
-    labels = {}
     nedfs = {}
+    labels = {}
     for edf_file in tqdm(edf_files):
         if os.path.exists(f"{feature_dir}/{edf_file}.pkl"):
             nedfs[edf_file] = pd.read_pickle(f"{feature_dir}/{edf_file}.pkl")
@@ -265,7 +332,7 @@ def get_features_and_labels(edf_files, tse_files, frequency, duration, montage_t
             if idx not in train_ids and idx not in test_ids:
                 continue
 
-            nedf, label = __get_feature_label_dataframe(edf_file, edf_files, tse_files, frequency, duration, montage_type)
+            nedf, label = __get_feature_label_dataframe(version, edf_file, edf_files, label_files, frequency, duration, montage_type)
             labels[edf_file] = label
             nedfs[edf_file] = nedf
             try:
@@ -276,7 +343,7 @@ def get_features_and_labels(edf_files, tse_files, frequency, duration, montage_t
     return nedfs, labels
 
 
-def get_linewise_features_and_labels(edf_files, nedfs, labels, frequency, duration, train_ids, test_ids, \
+def get_linewise_features_and_labels(edf_files, nedfs, labels, frequency, duration, train_ids, test_ids,
                                      feature_linewise_dir, label_linewise_dir):
     """
     Calculate and serialize line-wise features and labels
@@ -311,14 +378,18 @@ def get_linewise_features_and_labels(edf_files, nedfs, labels, frequency, durati
 
 def compute_fft(signals, n):
     """
-    Args:
-        signals: numpy.ndarray
-            EEG signals, (number of channels, number of data points)
-            shape (525960, 19, 200) for v1.5.2
-        n: integer
-            length of positive frequency terms of fourier transform
+    Parameters:
+    -----------
+    signals: numpy.ndarray
+        EEG signals, (number of channels, number of data points)
+        shape (525960, 19, 200) for v1.5.2
+    n: integer
+        length of positive frequency terms of fourier transform
+
     Returns:
-        FT: log amplitude of FFT of signals, (number of channels, number of data points)
+    --------
+    numpy.ndarray
+        log amplitude of FFT of signals, (number of channels, number of data points)
     """
     # FFT on the last dimension
     fourier_signal = fft(signals, n=n, axis=-1)
@@ -337,8 +408,17 @@ def compute_fft(signals, n):
 
 def get_meta(montage_type, frequency, train_ids, test_ids, edf_files, nedfs, meta_dir):
     """
-    Calculate and serialize meta information, including:
-        channel-wise mean@train, std@train, mean@test, std@test, mean_fft@train, std_fft@train
+    Calculate and serialize meta information to pickle, in format:
+        {
+            'train': list of train edf file names,
+            'test': list of test edf file names,
+            'mean@train': channel-wise mean of train,
+            'std@train': channel-wise std of train,
+            'mean@test': channel-wise mean of test,
+            'std@test': channel-wise std of test,
+            'mean_fft@train': channel-wise mean of train fft,
+            'std_fft@train': channel-wise std of train fft
+        }
     """
     edf_files_train = []
     edf_files_test = []
@@ -346,7 +426,7 @@ def get_meta(montage_type, frequency, train_ids, test_ids, edf_files, nedfs, met
         idx = edf_file.split('.')[0].split('_')[0]
         if idx in train_ids:
             edf_files_train.append(edf_file)
-        if idx in test_ids:
+        elif idx in test_ids:
             edf_files_test.append(edf_file)
     print(f'Number of train / test edf files: {len(edf_files_train)} / {len(edf_files_test)}')
 
@@ -390,7 +470,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--tusz-version', type=str, default="2.0.0", choices=['1.5.2', '2.0.0'],
                         help='tusz version')
-    parser.add_argument('--duration', type=int, default=60, choices=[30, 60, 120],
+    parser.add_argument('--duration', type=int, default=60,
                         help='window size, in seconds')
     parser.add_argument('--frequency', type=int, default=200,
                         help='resample frequency')
@@ -407,7 +487,7 @@ def main():
     parser.add_argument('--test-meta', type=str, nargs='+', default=['devSet_seq2seq_12s_nosz.txt', 'devSet_seq2seq_12s_sz.txt'],
                         help='file markers of train set, only required for v1.5.2.')
     parser.add_argument('--output-dir', type=str, default="data/tusz_processed/",
-                        help='root path for output data, can be empty.')
+                        help='root path for output data.')
     args = parser.parse_args()
 
     # output directories
@@ -422,32 +502,38 @@ def main():
         if not os.path.isdir(path):
             os.mkdir(path)
 
-    print("Reading tse/edf file names...")
-    tse_files, edf_files = get_tse_edf_file_names(args.raw_data_dir, args.resampled_data_dir)
-    print(f"Number of tse files: {len(tse_files)}")
+    print("Reading edf and label file names...")
+    edf_files = get_edf_file_names(args.resampled_data_dir)
     print(f"Number of resampled edf files: {len(edf_files)}")
 
-    # process resampleing if no files not found in resampled path
-    print("Resampling...")
+    # process resampleing if no files found in resampled path
     if len(edf_files) == 0:
+        print("Resampling...")
         edf_files = resample_all(args.raw_data_dir, args.frequency, args.resampled_data_dir)
-    print(f"Number of resampled edf files: {len(edf_files)}")
+        print(f"Number of resampled edf files: {len(edf_files)}")
 
     print("Getting train/test ids...")
-    train_ids, test_ids = get_train_test_ids(args.file_markers_dir, args.train_meta, args.test_meta)
+    if args.tusz_version == '1.5.2':
+        train_ids, test_ids = get_train_test_ids_v1(args.file_markers_dir, args.train_meta, args.test_meta)
+    else:
+        train_ids, test_ids = get_train_test_ids_v2(args.raw_data_dir)
     print(f"Number of train ids: {len(train_ids)}")
     print(f"Number of test ids: {len(test_ids)}")
 
-    print("Getting features and labels in dataframe...")
-    nedfs, labels = get_features_and_labels(edf_files, tse_files, args.frequency, args.duration, args.montage_type, \
-                                            train_ids, test_ids, feature_dir, label_dir)
+    label_files = get_label_file_names(args.tusz_version, args.raw_data_dir)
+    print(f"Number of label files: {len(label_files)}")
 
-    print("Getting line-wise features and labels...")
-    get_linewise_features_and_labels(edf_files, nedfs, labels, args.frequency, args.duration, train_ids, test_ids, \
+    print("Calculating and serializing features and labels in dataframe...")
+    nedfs, labels = get_features_and_labels(args.tusz_version, edf_files, label_files, args.frequency, args.duration,
+                                            args.montage_type, train_ids, test_ids, feature_dir, label_dir)
+
+    print("Calculating and serializing line-wise features and labels...")
+    get_linewise_features_and_labels(edf_files, nedfs, labels, args.frequency, args.duration, train_ids, test_ids,
                                      feature_linewise_dir, label_linewise_dir)
 
-    print("Getting meta...")
+    print("Calculating and serializing meta...")
     get_meta(args.montage_type, args.frequency, train_ids, test_ids, edf_files, nedfs, meta_dir)
+
 
 if __name__ == '__main__':
     main()
